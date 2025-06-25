@@ -19,7 +19,7 @@ export default class Editor extends cc.Component {
     private uuidComp: string = null;
     private propertiesDataJs: any = null;
     private propertiesDataProject: any = null;
-    private uuidNode: string = null;
+    uuidNode: string = null;
 
     /** 按下的按键 */
     private _keySet: Set<cc.macro.KEY> = new Set();
@@ -58,7 +58,7 @@ export default class Editor extends cc.Component {
         cc.systemEvent.off(cc.SystemEvent.EventType.KEY_UP, this.onKeyUp, this);
     }
 
-    private onKeyDown(event: cc.Event.EventKeyboard) {
+    private async onKeyDown(event: cc.Event.EventKeyboard) {
         this._keySet.add(event.keyCode);
 
         switch (event.keyCode) {
@@ -70,13 +70,27 @@ export default class Editor extends cc.Component {
                     this.exportRuntimeData();
                 }
                 break;
-            case cc.macro.KEY.e:
-                return;
+            case cc.macro.KEY.c:
+                // return;
                 if (this._keySet.has(cc.macro.KEY.ctrl)) {
-                    // 导出状态机runtime数据
-                    this.exportRuntimeData();
+                    let data: any = this.Fsm.exportProject();
+                    data.parameters = this.Parameters.export();
+                    let json = JSON.stringify(data)
+                    this.coppyToClip(json);
                 }
                 break;
+            case cc.macro.KEY.v:
+                if (this._keySet.has(cc.macro.KEY.ctrl)) {
+                    let text = await navigator.clipboard.readText();
+                    let data = null;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        return;
+                    }
+
+
+                }
             case cc.macro.KEY.Delete:
                 // 删除
                 this.Fsm.deleteCurUnit();

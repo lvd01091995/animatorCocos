@@ -7,13 +7,44 @@ const { ccclass, property } = cc._decorator;
 @ccclass
 export default class Main extends cc.Component {
     private _editor: Editor = null;
-    @property(cc.Label) lbNameNode: cc.Label = null;
- 
+   // @property(cc.Label) lbNameNode: cc.Label = null;
+    private _keySet: Set<cc.macro.KEY> = new Set();
     protected onLoad() {
         cc.debug.setDisplayStats(false);
         this.onInit();
+        cc.systemEvent.on(cc.SystemEvent.EventType.KEY_DOWN, this.onKeyDown, this);
+        cc.systemEvent.on(cc.SystemEvent.EventType.KEY_UP, this.onKeyUp, this);
     }
+    private onKeyUp(event: cc.Event.EventKeyboard) {
+        this._keySet.delete(event.keyCode);
+    }
+    private async onKeyDown(event: cc.Event.EventKeyboard) {
+        this._keySet.add(event.keyCode);
 
+        switch (event.keyCode) {
+
+            case cc.macro.KEY.v:
+                if (this._keySet.has(cc.macro.KEY.ctrl)) {
+                    let text = await navigator.clipboard.readText();
+                    let data = null;
+                    try {
+                        data = JSON.parse(text);
+                        if (data.animator) {
+                            this.resetEditor();
+                            this._editor.Parameters.import(data.parameters);
+                            this._editor.Fsm.importProject(data);
+                        }
+                    } catch (e) {
+                        return;
+                    }
+
+
+                }
+                break;
+            default:
+                break;
+        }
+    }
     private async onInit() {
         await Res.loadDir(ResDirUrl.PREFAB, cc.Prefab);
 
@@ -30,8 +61,8 @@ export default class Main extends cc.Component {
         // console.log("uuid: " + searchParams.uuid)
         let dataJson = searchParams.json;
         //       dataJson = `{"type":"Sequence","data":{},"typeEasing":"EaseNone","easingPrama":3,"list":[{"type":"MoveTo","data":{"t":1,"pos":{"x":0,"y":0,"z":0}},"typeEasing":"easeBackOut","easingPrama":3,"list":[]},{"type":"DelayTime","data":{"t":2},"typeEasing":"EaseNone","easingPrama":3,"list":[]},{"type":"MoveTo","data":{"t":1,"pos":{"x":0,"y":0,"z":0}},"typeEasing":"EaseNone","easingPrama":3,"list":[]}]}`;
-        this.lbNameNode.string = searchParams.name;
-       // this._curIndexHandler = searchParams.curIndexHandler || 0;
+       // this.lbNameNode.string = searchParams.name;
+        // this._curIndexHandler = searchParams.curIndexHandler || 0;
         console.log(dataJson);
         let data = null;
         try {
@@ -95,13 +126,16 @@ export default class Main extends cc.Component {
             // }
 
             let name = e.dataTransfer.getData('name');
+            let uuid = e.dataTransfer.getData("value");
             if (name.endsWith('.json') || name.endsWith('.anim')) {
-                let stringContent: string = await callParentMethod('getInfoFileByUUID', e.dataTransfer.getData("value"));
+                let stringContent: string = await callParentMethod('getInfoFileByUUID', uuid);
                 if (name.endsWith('.json')) {
                     let data: any = JSON.parse(stringContent);
-                     if (data.animations) {
+                    if (data.animations) {
                         // 读取spine文件
                         this._editor.Fsm.improtSpine(data);
+                        console.log
+                        callParentMethod('setSkeletonData', {uuid:uuid , uuidNode:this._editor.uuidNode  } );
                     } else if (data.armature) {
                         // 读取龙骨文件
                         this._editor.Fsm.importDragonBones(data);
@@ -111,6 +145,7 @@ export default class Main extends cc.Component {
                     this._editor.Fsm.importAnim(data);
                 }
 
+                
 
                 //console.log(string);
             }
