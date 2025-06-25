@@ -67,7 +67,7 @@ export default class Editor extends cc.Component {
                     console.log("addd----------------------")
                     // 导出工程文件
                     this.exportProject();
-                    this.exportRuntimeData();
+                    //this.exportRuntimeData();
                 }
                 break;
             case cc.macro.KEY.c:
